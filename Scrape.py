@@ -1,5 +1,7 @@
 import sys
 import re
+import inspect
+import datetime
 
 try:
     import urllib2
@@ -28,14 +30,8 @@ class Scrape:
 		scrape.output  #this is a {} with names from your configurations
 
 	"""
-    source = ""
-    output = {}
-    Url = ""
-    name = ""  # should be a string0
-    scrapeType = ""
-    commands = {}
-    flags = []
-    filter  # should be string
+    cashe = {}
+    casheDetla = datetime.timedelta(hours=-1)
 
     def __init__(self, url="", source=""):
         '''
@@ -43,6 +39,16 @@ class Scrape:
 		can also use source if you have a subscrape or a test/ file
 		type
 		'''
+        self.source = ""
+        self.output = {}
+        self.url      = ""
+        self.name = ""  # should be a string0
+        self.scrapeType = ""
+        self.commands = {}
+        self.flags = []
+        self.filter= ""  # should be string
+        if Scrape.cashe==None:
+            Scrape.cashe={}
         self.output = {}
         self.source = ""
         self.url = url
@@ -62,8 +68,12 @@ class Scrape:
        'Accept-Encoding': 'none',
        'Accept-Language': 'en-US,en;q=0.8',
        'Connection': 'keep-alive'}
-
-        if (self.Url != None):
+        if self.url in Scrape.cashe:
+            if Scrape.cashe[self.url][1] > datetime.datetime.now() +Scrape.casheDetla:
+                #print("DEBUG(getSource): " + "is true"+"\r\n"+Scrape.cashe[self.url][0][:128])
+                self.source=Scrape.cashe[self.url][0]
+                return
+        if (self.url != None):
             req = urllib2.Request(self.url, headers=hdr)
             self.source = str(urllib2.urlopen(req).read())
         elif (self.source != None and type(self.source) == type("")):
@@ -72,6 +82,7 @@ class Scrape:
             raise NameError("Source Not Defined and URL not given.")
         if self.source == None:
             raise NameError("Source Not Found")
+        Scrape.cashe[self.url]=(self.source, datetime.datetime.now())#todo add time check as well
 
     def setConfig(self, scrapeCfg={}):
         '''
@@ -263,5 +274,7 @@ class Item(list):
 
     def __str__(self):
         return self.__repr__()
-
+		
+def eprint(input):
+	print("debug("+str(inspect.getouterframes( inspect.currentframe() )[1][3])+"): "+ str(input))
 # end utility
